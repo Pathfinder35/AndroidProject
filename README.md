@@ -2,7 +2,7 @@
 A novice developer of Android
 
 ## Android研发实践相关软件的安装
-### 相关软件以及配置
+### 相关软件以及配置（图片无法显示-在寻找解决办法）
 
  [Android Studio下载地址](https://developer.android.google.cn/studio):安装4.1以上的版本，更好的支持TensorFlow Lite。
  
