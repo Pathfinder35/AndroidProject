@@ -6,7 +6,7 @@ A novice developer of Android
 
  [Android Studio下载地址](https://developer.android.google.cn/studio):安装4.1以上的版本，更好的支持TensorFlow Lite。
  
- [AndroidStudioHelloworld](./Pic/)
+ [AndroidStudioHelloworld](./Pic/Exp01/Android01.png)
     
  [Python](https://www.python.org/ ):
     
