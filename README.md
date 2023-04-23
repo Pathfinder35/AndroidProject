@@ -5,6 +5,8 @@ A novice developer of Android
 ### 相关软件以及配置
 
  [Android Studio下载地址](https://developer.android.google.cn/studio):安装4.1以上的版本，更好的支持TensorFlow Lite。
+ 
+ [AndroidStudioHelloworld](./Pic/)
     
  [Python](https://www.python.org/ ):
     
