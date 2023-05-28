@@ -499,3 +499,116 @@ fig.tight_layout()
 
 点击Nbextensions标签，勾选Hinterland：
 ![img](Pic/Exp03/tools.jpg)
+
+
+
+## 基于TensorFlow Lite实现Android花朵识别应用
+
+### 下载项目工作目录
+
+    git clone https://github.com/hoitab/TFLClassify.git
+
+
+初次使用遇到的问题
+      
+      1.你的主机中的软件中止了一个可建立的连接
+      解决:关闭电脑WIFI的移动热点
+
+      2.SDk的问题，可能和目录中设置的依赖不同，可以选择更改或者到Setting中下载缺失的SDK。
+
+
+Build后选择连接的真机
+
+![img](Pic/Exp04/phonePic01.jpg)
+
+遇到的问题
+
+    连接不上真机
+
+    需要在AS上安装对应真机的SDK platforms，以及安装SDK Tools里的Google usb drivers
+
+    具体教程：
+    
+  [连接真机办法](https://blog.csdn.net/qq_53317005/article/details/127679537)
+
+  另外可能还会遇到连接不上的情况，比如我的手机是鸿蒙系统的，虽然下载了相关的配置，但是依旧不行，可以试试先连接他自己的手机管理工具。
+
+  ![img](Pic/Exp04/phonePicTool.png)
+
+  然后去AS里的Troubleshoot Device Connection,按照步骤就能连接了。
+
+![img](Pic/Exp04/Troubleshoot.jpg)
+
+
+### 检查代码里的TODO项
+
+View>Tool Windows>TODO
+
+![img](Pic/Exp04/todo.jpg)
+
+### 添加代码重新运行APP
+
+
+1.定位“start”模块MainActivity.kt文件的TODO 1，添加初始化训练模型的代码
+
+    private class ImageAnalyzer(ctx: Context, private val listener: RecognitionListener) :
+        ImageAnalysis.Analyzer {
+
+      ...
+      // TODO 1: Add class variable TensorFlow Lite Model
+      private val flowerModel = FlowerModel.newInstance(ctx)
+
+      ...
+    }
+
+2.在CameraX的analyze方法内部，需要将摄像头的输入ImageProxy转化为Bitmap对象，并进一步转化为TensorImage 对象
+
+    override fun analyze(imageProxy: ImageProxy) {
+      ...
+      // TODO 2: Convert Image to Bitmap then to TensorImage
+      val tfImage = TensorImage.fromBitmap(toBitmap(imageProxy))
+      ...
+    }
+
+3.在CameraX的analyze方法内部，需要将摄像头的输入ImageProxy转化为Bitmap对象，并进一步转化为TensorImage 对象
+
+  · 按照属性score对识别结果按照概率从高到低排序
+
+  · 列出最高k种可能的结果，k的结果由常量MAX_RESULT_DISPLAY定义
+
+    override fun analyze(imageProxy: ImageProxy) {
+      ...
+      // TODO 2: Convert Image to Bitmap then to TensorImage
+      val tfImage = TensorImage.fromBitmap(toBitmap(imageProxy))
+      ...
+    }
+
+
+
+
+
+4.将识别的结果加入数据对象Recognition 中，包含label和score两个元素。后续将用于RecyclerView的数据显示
+
+    override fun analyze(imageProxy: ImageProxy) {
+    ...
+      // TODO 4: Converting the top probability items into a list of recognitions
+      for (output in outputs) {
+          items.add(Recognition(output.label, output.score))
+      }
+      ...
+    }
+
+5.将原先用于虚拟显示识别结果的代码注释掉或者删除
+
+    // START - Placeholder code at the start of the codelab. Comment this block of code out.
+    for (i in 0..MAX_RESULT_DISPLAY-1){
+        items.add(Recognition("Fake label $i", Random.nextFloat()))
+    }
+    // END - Placeholder code at the start of the codelab. Comment this block of code out.
+
+
+6.以物理设备重新运行start模块
+
+7.最终运行效果
+
+![img](Pic/Exp04/Finally.jpg)
