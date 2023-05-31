@@ -612,3 +612,316 @@ View>Tool Windows>TODO
 7.最终运行效果
 
 ![img](Pic/Exp04/Finally.jpg)
+
+## Tensorflow训练剪刀石头布数据模型
+
+### 下载相关数据，路径根据自己情况修改
+
+    !wget --no-check-certificate https://storage.googleapis.com/learning-datasets/rps.zip -O D:/Game/rps.zip
+  
+
+    !wget --no-check-certificate https://storage.googleapis.com/learning-datasets/rps-test-set.zip -O D:/Game/rps-test-set.zip
+
+### 或者直接下载
+
+  训练集:https://storage.googleapis.com/learning-datasets/rps.zip
+
+  测试集:https://storage.googleapis.com/learning-datasets/rps-test-set.zip
+
+### 在Notebook中，解压下载好的包
+```python
+import os
+import zipfile
+
+local_zip = 'D:/EDdown/rps.zip'
+zip_ref = zipfile.ZipFile(local_zip, 'r')
+zip_ref.extractall('D:/jupyter_datafolder/')
+zip_ref.close()
+
+local_zip = 'D:/EDdown/rps-test-set.zip'
+zip_ref = zipfile.ZipFile(local_zip, 'r')
+zip_ref.extractall('D:/jupyter_datafolder/')
+zip_ref.close()
+```
+
+### 检测解压结果，打印解压信息
+
+```python
+rock_dir = os.path.join('D:/jupyter_datafolder/rps/rock')
+paper_dir = os.path.join('D:/jupyter_datafolder/rps/paper')
+scissors_dir = os.path.join('D:/jupyter_datafolder/rps/scissors')
+
+print('total training rock images:', len(os.listdir(rock_dir)))
+print('total training paper images:', len(os.listdir(paper_dir)))
+print('total training scissors images:', len(os.listdir(scissors_dir)))
+
+rock_files = os.listdir(rock_dir)
+print(rock_files[:10])
+
+paper_files = os.listdir(paper_dir)
+print(paper_files[:10])
+
+scissors_files = os.listdir(scissors_dir)
+print(scissors_files[:10])
+```
+
+### 各打印两张剪刀石头布的图形
+
+    total training rock images: 840
+    total training paper images: 840
+    total training scissors images: 840
+    ['rock01-000.png', 'rock01-001.png', 'rock01-002.png', 'rock01-003.png', 'rock01-004.png', 'rock01-005.png', 'rock01-006.png', 'rock01-007.png', 'rock01-008.png', 'rock01-009.png']
+    ['paper01-000.png', 'paper01-001.png', 'paper01-002.png', 'paper01-003.png', 'paper01-004.png', 'paper01-005.png', 'paper01-006.png', 'paper01-007.png', 'paper01-008.png', 'paper01-009.png']
+    ['scissors01-000.png', 'scissors01-001.png', 'scissors01-002.png', 'scissors01-003.png', 'scissors01-004.png', 'scissors01-005.png', 'scissors01-006.png', 'scissors01-007.png', 'scissors01-008.png', 'scissors01-009.png']
+    
+
+
+```python
+%matplotlib inline
+
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
+pic_index = 2
+
+next_rock = [os.path.join(rock_dir, fname) 
+                for fname in rock_files[pic_index-2:pic_index]]
+next_paper = [os.path.join(paper_dir, fname) 
+                for fname in paper_files[pic_index-2:pic_index]]
+next_scissors = [os.path.join(scissors_dir, fname) 
+                for fname in scissors_files[pic_index-2:pic_index]]
+
+for i, img_path in enumerate(next_rock+next_paper+next_scissors):
+  #print(img_path)
+  img = mpimg.imread(img_path)
+  plt.imshow(img)
+  plt.axis('Off')
+  plt.show()
+
+```
+
+
+    
+![png](Pic/Exp05/output_2_0.png)
+    
+
+
+
+    
+![png](Pic/Exp05/output_2_1.png)
+    
+
+
+
+    
+![png](Pic/Exp05/output_2_2.png)
+    
+
+
+
+    
+![png](Pic/Exp05/output_2_3.png)
+    
+
+
+
+    
+![png](Pic/Exp05/output_2_4.png)
+    
+
+
+
+    
+![png](/Pic/Exp05/output_2_5.png)
+    
+
+### 调用TensorFlow的keras进行数据模型的训练和评估。Keras是开源人工神经网络库，TensorFlow集成了keras的调用接口，可以方便的使用。
+
+
+```python
+import tensorflow as tf
+import keras_preprocessing
+from keras_preprocessing import image
+from keras_preprocessing.image import ImageDataGenerator
+
+TRAINING_DIR = "D:/jupyter_datafolder/rps/"
+training_datagen = ImageDataGenerator(
+      rescale = 1./255,
+	    rotation_range=40,
+      width_shift_range=0.2,
+      height_shift_range=0.2,
+      shear_range=0.2,
+      zoom_range=0.2,
+      horizontal_flip=True,
+      fill_mode='nearest')
+
+VALIDATION_DIR = "D:/jupyter_datafolder/rps-test-set/"
+validation_datagen = ImageDataGenerator(rescale = 1./255)
+
+train_generator = training_datagen.flow_from_directory(
+	TRAINING_DIR,
+	target_size=(150,150),
+	class_mode='categorical',
+  batch_size=126
+)
+
+validation_generator = validation_datagen.flow_from_directory(
+	VALIDATION_DIR,
+	target_size=(150,150),
+	class_mode='categorical',
+  batch_size=126
+)
+
+model = tf.keras.models.Sequential([
+    # Note the input shape is the desired size of the image 150x150 with 3 bytes color
+    # This is the first convolution
+    tf.keras.layers.Conv2D(64, (3,3), activation='relu', input_shape=(150, 150, 3)),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    # The second convolution
+    tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2,2),
+    # The third convolution
+    tf.keras.layers.Conv2D(128, (3,3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2,2),
+    # The fourth convolution
+    tf.keras.layers.Conv2D(128, (3,3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2,2),
+    # Flatten the results to feed into a DNN
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dropout(0.5),
+    # 512 neuron hidden layer
+    tf.keras.layers.Dense(512, activation='relu'),
+    tf.keras.layers.Dense(3, activation='softmax')
+])
+
+
+model.summary()
+
+model.compile(loss = 'categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+
+history = model.fit(train_generator, epochs=25, steps_per_epoch=20, validation_data = validation_generator, verbose = 1, validation_steps=3)
+
+model.save("rps.h5")
+
+```
+
+    Found 2520 images belonging to 3 classes.
+    Found 372 images belonging to 3 classes.
+    Model: "sequential"
+    _________________________________________________________________
+     Layer (type)                Output Shape              Param #   
+    =================================================================
+     conv2d (Conv2D)             (None, 148, 148, 64)      1792      
+                                                                     
+     max_pooling2d (MaxPooling2D  (None, 74, 74, 64)       0         
+     )                                                               
+                                                                     
+     conv2d_1 (Conv2D)           (None, 72, 72, 64)        36928     
+                                                                     
+     max_pooling2d_1 (MaxPooling  (None, 36, 36, 64)       0         
+     2D)                                                             
+                                                                     
+     conv2d_2 (Conv2D)           (None, 34, 34, 128)       73856     
+                                                                     
+     max_pooling2d_2 (MaxPooling  (None, 17, 17, 128)      0         
+     2D)                                                             
+                                                                     
+     conv2d_3 (Conv2D)           (None, 15, 15, 128)       147584    
+                                                                     
+     max_pooling2d_3 (MaxPooling  (None, 7, 7, 128)        0         
+     2D)                                                             
+                                                                     
+     flatten (Flatten)           (None, 6272)              0         
+                                                                     
+     dropout (Dropout)           (None, 6272)              0         
+                                                                     
+     dense (Dense)               (None, 512)               3211776   
+                                                                     
+     dense_1 (Dense)             (None, 3)                 1539      
+                                                                     
+    =================================================================
+    Total params: 3,473,475
+    Trainable params: 3,473,475
+    Non-trainable params: 0
+    _________________________________________________________________
+    Epoch 1/25
+    20/20 [==============================] - 40s 2s/step - loss: 1.7047 - accuracy: 0.3433 - val_loss: 1.0858 - val_accuracy: 0.4812
+    Epoch 2/25
+    20/20 [==============================] - 39s 2s/step - loss: 1.1009 - accuracy: 0.3690 - val_loss: 1.3624 - val_accuracy: 0.3333
+    Epoch 3/25
+    20/20 [==============================] - 39s 2s/step - loss: 1.0970 - accuracy: 0.3980 - val_loss: 0.8634 - val_accuracy: 0.6935
+    Epoch 4/25
+    20/20 [==============================] - 39s 2s/step - loss: 1.0457 - accuracy: 0.4579 - val_loss: 0.8609 - val_accuracy: 0.5349
+    Epoch 5/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.9070 - accuracy: 0.5718 - val_loss: 0.5119 - val_accuracy: 0.9086
+    Epoch 6/25
+    20/20 [==============================] - 40s 2s/step - loss: 0.8909 - accuracy: 0.6242 - val_loss: 0.4716 - val_accuracy: 0.9785
+    Epoch 7/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.6111 - accuracy: 0.7373 - val_loss: 0.5425 - val_accuracy: 0.7527
+    Epoch 8/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.5414 - accuracy: 0.7718 - val_loss: 1.3219 - val_accuracy: 0.5134
+    Epoch 9/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.4557 - accuracy: 0.8167 - val_loss: 0.1103 - val_accuracy: 1.0000
+    Epoch 10/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.4686 - accuracy: 0.8345 - val_loss: 0.3001 - val_accuracy: 0.8548
+    Epoch 11/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.4024 - accuracy: 0.8663 - val_loss: 0.1617 - val_accuracy: 0.9866
+    Epoch 12/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.2340 - accuracy: 0.9095 - val_loss: 0.0238 - val_accuracy: 1.0000
+    Epoch 13/25
+    20/20 [==============================] - 38s 2s/step - loss: 0.2396 - accuracy: 0.9107 - val_loss: 0.1012 - val_accuracy: 0.9839
+    Epoch 14/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.2730 - accuracy: 0.9032 - val_loss: 0.0611 - val_accuracy: 1.0000
+    Epoch 15/25
+    20/20 [==============================] - 40s 2s/step - loss: 0.1950 - accuracy: 0.9262 - val_loss: 0.0349 - val_accuracy: 1.0000
+    Epoch 16/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.1342 - accuracy: 0.9528 - val_loss: 0.1297 - val_accuracy: 0.9140
+    Epoch 17/25
+    20/20 [==============================] - 40s 2s/step - loss: 0.2166 - accuracy: 0.9202 - val_loss: 0.0171 - val_accuracy: 1.0000
+    Epoch 18/25
+    20/20 [==============================] - 40s 2s/step - loss: 0.1837 - accuracy: 0.9341 - val_loss: 0.0828 - val_accuracy: 0.9919
+    Epoch 19/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.1224 - accuracy: 0.9603 - val_loss: 0.0094 - val_accuracy: 1.0000
+    Epoch 20/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.0949 - accuracy: 0.9675 - val_loss: 0.0109 - val_accuracy: 1.0000
+    Epoch 21/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.1323 - accuracy: 0.9508 - val_loss: 0.0152 - val_accuracy: 0.9973
+    Epoch 22/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.0810 - accuracy: 0.9762 - val_loss: 0.0119 - val_accuracy: 1.0000
+    Epoch 23/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.1269 - accuracy: 0.9516 - val_loss: 0.0298 - val_accuracy: 0.9866
+    Epoch 24/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.0747 - accuracy: 0.9746 - val_loss: 0.0172 - val_accuracy: 1.0000
+    Epoch 25/25
+    20/20 [==============================] - 39s 2s/step - loss: 0.2240 - accuracy: 0.9290 - val_loss: 0.0277 - val_accuracy: 0.9919
+    
+
+### 绘制训练和结果的相关信息
+
+```python
+import matplotlib.pyplot as plt
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs = range(len(acc))
+
+plt.plot(epochs, acc, 'r', label='Training accuracy')
+plt.plot(epochs, val_acc, 'b', label='Validation accuracy')
+plt.title('Training and validation accuracy')
+plt.legend(loc=0)
+plt.figure()
+plt.show()
+
+```
+
+
+    
+![png](/Pic/Exp05/output_4_0.png)
+    
+
+
+
+    <Figure size 640x480 with 0 Axes>
+
